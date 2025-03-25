@@ -1,9 +1,9 @@
-require('dotenv').config(); // ✅ Load environment variables first
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const admin = require("firebase-admin");
-const fetch = require('node-fetch'); // ✅ Import fetch for API calls
+const fetch = require('node-fetch');
 
 const serviceAccount = require("./firebaseAdminKey.json");
 
@@ -14,37 +14,50 @@ admin.initializeApp({
 const app = express();
 const PORT = 5000;
 
-// ✅ Middleware
 app.use(cors());
-app.use(express.json()); // ✅ Allows JSON parsing in requests
+app.use(express.json());
 
-// ✅ Test Route
 app.get('/', (req, res) => {
     res.send('Server is running!');
 });
 
-// ✅ Google Places API Route
-app.get('/places', async (req, res) => {
-    const input = req.query.input;
-    const GOOGLE_API_KEY = process.env.GOOGLE_MAP_KEY;
+const router = express.Router();
+app.use(router);
 
-    if (!input) {
-        return res.status(400).json({ error: 'Missing input parameter' });
+const MAPBOX_ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN;
+
+router.get("/places", async (req, res) => {
+    const query = req.query.input;
+  
+    if (!query) {
+      return res.status(400).json({ error: "Missing query parameter" });
     }
-
+  
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+      query
+    )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&autocomplete=true&limit=5`;
+  
     try {
-        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${GOOGLE_API_KEY}&components=country:IN`;
-        const response = await fetch(url);
-        const data = await response.json();
-        res.json(data);
+      const response = await fetch(url);
+      const data = await response.json();
+  
+      if (data.features) {
+        const places = data.features.map((place) => ({
+          name: place.text,
+          coordinates: place.center,
+        }));
+        return res.json({ predictions: places });
+      } else {
+        return res.status(500).json({ error: "No results found" });
+      }
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch places' });
+      console.error("Error fetching Mapbox places:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
-// ✅ Firebase Login Route
 app.post('/api/login', async (req, res) => {
-    const { idToken } = req.body; // Get token from frontend
+    const { idToken } = req.body;
 
     if (!idToken) {
         return res.status(400).json({ success: false, message: "ID token is required" });
@@ -58,7 +71,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// ✅ Start Server AFTER all routes are defined
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

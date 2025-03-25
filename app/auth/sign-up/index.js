@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import React, { useEffect, useState } from 'react';
 import { useNavigation, useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
-import axios from "axios"; // ✅ Only keep axios, remove Firebase client-side imports
+import axios from "axios";
 
 export default function SignUp() {
   const navigation = useNavigation();

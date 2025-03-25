@@ -4,6 +4,16 @@ import { auth } from "./configs/FirebaseConfig";
 import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import Login from "./components/Login";
+import Mapbox from "@rnmapbox/maps";
+import Constants from "expo-constants";
+
+const MAPBOX_PUBLIC_TOKEN = Constants.expoConfig?.extra?.MAPBOX_PUBLIC_TOKEN;
+
+if (MAPBOX_PUBLIC_TOKEN) {
+  Mapbox.setAccessToken(MAPBOX_PUBLIC_TOKEN);
+} else {
+  console.error("Mapbox token is missing.");
+}
 
 export default function Index() {
   const [user, setUser] = useState<User | null>(null);
@@ -19,7 +29,7 @@ export default function Index() {
       }
     });
 
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   if (loading) {
@@ -29,5 +39,6 @@ export default function Index() {
       </View>
     );
   }
-  return <Login/>
+
+  return <Login />;
 }
